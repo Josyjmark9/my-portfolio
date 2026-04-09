@@ -69,7 +69,12 @@ export default function Admin() {
     setProjects(projectsData);
     setSkills(skillsData);
     setMessages(messagesData);
-    setProfile(profileData);
+    setProfile({
+      name: 'Josiah Johnmark',
+      tagline: 'Creative ideas that drive growth',
+      photo: '/profile.jpg',
+      ...profileData
+    });
     setSocials(socialsData);
     setSettings(settingsData);
     setSections(sectionsData);

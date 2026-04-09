@@ -236,7 +236,12 @@ function Portfolio() {
     const servicesData = getData('services', []);
     const experienceData = getData('experience', []);
 
-    setProfile(profileData);
+    setProfile({
+      name: 'Josiah Johnmark',
+      tagline: 'Creative ideas that drive growth',
+      photo: '/profile.jpg',
+      ...profileData
+    });
     setProjects(projectsData);
     setSocials(socialsData);
     setSettings(settingsData);
