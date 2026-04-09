@@ -29,6 +29,7 @@ export default function Admin() {
   const [socials, setSocials] = useState<any>({});
   const [settings, setSettings] = useState<any>({});
   const [sections, setSections] = useState<any>({});
+  const [sectionBackgrounds, setSectionBackgrounds] = useState<any>({});
   const [messages, setMessages] = useState<any[]>([]);
   const [services, setServices] = useState<any[]>([]);
   const [experience, setExperience] = useState<any[]>([]);
@@ -57,6 +58,7 @@ export default function Admin() {
     const socialsData = load('socials', {});
     const settingsData = load('settings', {});
     const sectionsData = load('sections', {});
+    const sectionBackgroundsData = load('sectionBackgrounds', {});
     const servicesData = load('services', []);
     const experienceData = load('experience', []);
 
@@ -72,12 +74,13 @@ export default function Admin() {
     setProfile({
       name: 'Josiah Johnmark',
       tagline: 'Creative ideas that drive growth',
-      photo: '/profile.jpg',
+      photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?fit=crop&w=500&h=500&q=80',
       ...profileData
     });
     setSocials(socialsData);
     setSettings(settingsData);
     setSections(sectionsData);
+    setSectionBackgrounds(sectionBackgroundsData);
     setServices(servicesData);
     setExperience(experienceData);
   };
@@ -213,6 +216,7 @@ export default function Admin() {
 
   const saveSections = () => {
     save('sections', sections);
+    save('sectionBackgrounds', sectionBackgrounds);
     showToast('sections');
   };
 
@@ -771,8 +775,29 @@ export default function Admin() {
                       </label>
                     </div>
                   ))}
+                  <div style={{ marginTop: '24px', borderTop: '1px solid var(--blue-border)', paddingTop: '24px' }}>
+                    <div className="admin-card-title">Section Backgrounds</div>
+                    <div className="panel-sub">Add image URLs or animation names for each section.</div>
+                    {[
+                      { key: 'hero', label: 'Hero Background URL' },
+                      { key: 'projects', label: 'Projects Background URL' },
+                      { key: 'about-section', label: 'About Background URL (Profile pic used by default)' },
+                      { key: 'contact', label: 'Contact Background URL' }
+                    ].map(s => (
+                      <div key={s.key} className="aform-group" style={{ marginBottom: '16px' }}>
+                        <label className="aform-label">{s.label}</label>
+                        <input 
+                          type="text" 
+                          className="aform-input" 
+                          value={sectionBackgrounds[s.key] || ''} 
+                          onChange={(e) => setSectionBackgrounds({ ...sectionBackgrounds, [s.key]: e.target.value })} 
+                          placeholder="https://example.com/image.jpg" 
+                        />
+                      </div>
+                    ))}
+                  </div>
                   <div style={{ marginTop: '16px' }}>
-                    <button className="save-btn" onClick={saveSections}>Save visibility</button>
+                    <button className="save-btn" onClick={saveSections}>Save sections & backgrounds</button>
                     <span className={`saved-toast ${toasts.sections ? 'show' : ''}`}>Saved!</span>
                   </div>
                 </div>

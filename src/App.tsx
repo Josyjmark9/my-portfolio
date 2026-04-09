@@ -70,6 +70,7 @@ function Portfolio() {
   const [socials, setSocials] = useState<any>({});
   const [settings, setSettings] = useState<any>({});
   const [sections, setSections] = useState<any>({});
+  const [sectionBackgrounds, setSectionBackgrounds] = useState<any>({});
   const [services, setServices] = useState<any[]>([]);
   const [experience, setExperience] = useState<any[]>([]);
   const [formSuccess, setFormSuccess] = useState(false);
@@ -233,19 +234,21 @@ function Portfolio() {
     const socialsData = getData('socials', {});
     const settingsData = getData('settings', {});
     const sectionsData = getData('sections', {});
+    const sectionBackgroundsData = getData('sectionBackgrounds', {});
     const servicesData = getData('services', []);
     const experienceData = getData('experience', []);
 
     setProfile({
       name: 'Josiah Johnmark',
       tagline: 'Creative ideas that drive growth',
-      photo: '/profile.jpg',
+      photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?fit=crop&w=500&h=500&q=80',
       ...profileData
     });
     setProjects(projectsData);
     setSocials(socialsData);
     setSettings(settingsData);
     setSections(sectionsData);
+    setSectionBackgrounds(sectionBackgroundsData);
     setServices(servicesData);
     setExperience(experienceData);
 
@@ -386,6 +389,9 @@ function Portfolio() {
         {/* HERO */}
         {sections.hero !== false && (
           <section id="hero">
+            {sectionBackgrounds.hero && (
+              <div className="section-bg-layer" style={{ backgroundImage: `url(${sectionBackgrounds.hero})`, opacity: 0.15 }}></div>
+            )}
             <div className="hero-grid-bg"></div>
 
             <div className="hero-top">
@@ -394,10 +400,19 @@ function Portfolio() {
                   <div className="photo-border-glow"></div>
                   <div className="photo-glow-spot"></div>
                   {profile.photo ? (
-                    <img src={profile.photo} alt="Josiah Johnmark" referrerPolicy="no-referrer" />
-                  ) : (
-                    <div className="photo-placeholder">JJ</div>
-                  )}
+                    <img 
+                      src={profile.photo} 
+                      alt="Josiah Johnmark" 
+                      referrerPolicy="no-referrer" 
+                      className="profile-img"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                        const placeholder = (e.target as HTMLImageElement).parentElement?.querySelector('.photo-placeholder');
+                        if (placeholder) (placeholder as HTMLElement).style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div className="photo-placeholder" style={{ display: profile.photo ? 'none' : 'flex', zIndex: 2 }}>JJ</div>
                 </div>
               </div>
 
@@ -458,6 +473,9 @@ function Portfolio() {
           <>
             <div className="section-divider"></div>
             <section id="projects">
+              {sectionBackgrounds.projects && (
+                <div className="section-bg-layer" style={{ backgroundImage: `url(${sectionBackgrounds.projects})` }}></div>
+              )}
               <div className="section-tag reveal">My work</div>
               <div className="section-title reveal">Projects</div>
 
@@ -579,21 +597,35 @@ function Portfolio() {
         {sections['about-section'] !== false && (
           <>
             <div className="section-divider"></div>
-            <section id="about-section">
+            <section id="about-section" className="vintage-bg-container">
+              {/* Vintage Background */}
+              <div 
+                className="vintage-bg" 
+                style={{ 
+                  backgroundImage: `url(${sectionBackgrounds['about-section'] || profile.photo})`,
+                  opacity: 0.15
+                }}
+              ></div>
+              
               <div className="section-tag reveal">Who I am</div>
               <div className="section-title reveal">About me</div>
-              <div
-                className="hero-about tilt-el reveal"
-                data-max="8"
-                style={{ maxWidth: '780px' }}
-                onMouseMove={handleTilt}
-                onMouseLeave={resetTilt}
-              >
-                <div className="glow-spot"></div>
-                <p
-                  style={{ fontSize: '15px', color: 'rgba(255,255,255,0.6)', lineHeight: '1.9', fontFamily: "'Inter', sans-serif", fontWeight: 300 }}
-                  dangerouslySetInnerHTML={{ __html: profile.aboutFull || 'Josiah Johnmark is a <strong style="color:var(--blue);">creative person</strong> based in Abuja, Nigeria — a pencil artist and developer people can\'t stop coming back to.<br><br>With over a decade of pencil art experience, he specialises in realistic portraits and character illustrations — work that demands patience, precision, and an obsession with getting every single detail right. That same obsession carries into every line of code he writes.<br><br>His journey into game development was inevitable. Growing up with a deep love for games — the kind that pull you in and refuse to let go — Josiah didn\'t just want to play them. He wanted to build them. The smooth mechanics, the addictive features, the competitive rankings that make you desperate to come back — that\'s the experience he aims to create.<br><br>Holding a degree in Biochemistry, Josiah made a deliberate choice to follow his passion over convention. He respects the science, but his heart has always been in creativity, technology, and growth.<br><br><em style="color:var(--blue);">Talented. Creative. Hardworking.</em> — That\'s how the people around him describe him.' }}
-                ></p>
+              
+              <div className="about-tabs reveal">
+                <div className="about-tab-content">
+                  <div
+                    className="hero-about tilt-el"
+                    data-max="5"
+                    style={{ maxWidth: '700px', margin: '0 auto', background: 'rgba(10, 20, 40, 0.7)', backdropFilter: 'blur(10px)', border: '1px solid var(--blue-border)' }}
+                    onMouseMove={handleTilt}
+                    onMouseLeave={resetTilt}
+                  >
+                    <div className="glow-spot"></div>
+                    <p
+                      className="about-text-compact"
+                      dangerouslySetInnerHTML={{ __html: profile.aboutFull || 'Josiah Johnmark is a <strong style="color:var(--blue);">creative person</strong> based in Abuja, Nigeria — a pencil artist and developer people can\'t stop coming back to.<br><br>With over a decade of pencil art experience, he specialises in realistic portraits and character illustrations — work that demands patience, precision, and an obsession with getting every single detail right. That same obsession carries into every line of code he writes.<br><br>His journey into game development was inevitable. Growing up with a deep love for games — the kind that pull you in and refuse to let go — Josiah didn\'t just want to play them. He wanted to build them. The smooth mechanics, the addictive features, the competitive rankings that make you desperate to come back — that\'s the experience he aims to create.<br><br>Holding a degree in Biochemistry, Josiah made a deliberate choice to follow his passion over convention. He respects the science, but his heart has always been in creativity, technology, and growth.<br><br><em style="color:var(--blue);">Talented. Creative. Hardworking.</em> — That\'s how the people around him describe him.' }}
+                    ></p>
+                  </div>
+                </div>
               </div>
             </section>
           </>
@@ -603,6 +635,9 @@ function Portfolio() {
           <>
             <div className="section-divider"></div>
             <section id="contact">
+              {sectionBackgrounds.contact && (
+                <div className="section-bg-layer" style={{ backgroundImage: `url(${sectionBackgrounds.contact})` }}></div>
+              )}
               <div className="section-tag reveal">Get in touch</div>
               <div className="section-title reveal">Contact</div>
               <div className="contact-grid">
