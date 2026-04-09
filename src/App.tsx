@@ -379,16 +379,10 @@ function Portfolio() {
           <section id="hero">
             <div className="hero-grid-bg"></div>
 
-            {sections['visitor-badge'] !== false && (
-              <div className="visitor-badge">
-                <div className="visitor-dot"></div>
-                <span>{visitorCount.toLocaleString()}</span> visitors
-              </div>
-            )}
-
             <div className="hero-top">
               <div className="photo-outer">
                 <div className="photo-circle">
+                  <div className="photo-border-glow"></div>
                   <div className="photo-glow-spot"></div>
                   {profile.photo ? (
                     <img src={profile.photo} alt="Josiah Johnmark" referrerPolicy="no-referrer" />
