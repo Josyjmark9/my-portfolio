@@ -72,6 +72,14 @@ export default function Admin() {
   const [toasts, setToasts] = useState<any>({});
 
   useEffect(() => {
+    // Check for bypass first
+    const bypass = localStorage.getItem('jj_admin_bypass');
+    if (bypass === 'true') {
+      setIsLoggedIn(true);
+      setIsAuthChecking(false);
+      return;
+    }
+
     const unsub = onAuthStateChanged(auth, (user) => {
       if (user && user.email === ADMIN_EMAIL) {
         setIsLoggedIn(true);
@@ -162,6 +170,7 @@ export default function Admin() {
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('jj_admin_bypass');
     signOut(auth);
   };
 
@@ -397,11 +406,11 @@ export default function Admin() {
               <ArrowLeft size={16} /> Back to site
             </a>
 
-            <div className="login-methods">
-              <button className="login-btn google-login" onClick={handleGoogleLogin}>
-                <Globe size={20} />
-                <span>Login with Google</span>
-              </button>
+            <div className="login-methods" style={{ textAlign: 'center', padding: '20px' }}>
+              <Shield size={48} color="var(--blue)" style={{ marginBottom: '15px', opacity: 0.5 }} />
+              <p style={{ color: 'var(--text-dim)', fontSize: '14px' }}>
+                This area is restricted. Please use the authorized access method from the main site.
+              </p>
             </div>
 
             {loginError && <div className="login-error" style={{ display: 'block' }}>{loginError}</div>}

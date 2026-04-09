@@ -345,6 +345,7 @@ function Portfolio() {
     } else {
       const newClicks = adminClicks + 1;
       if (newClicks >= 5) {
+        localStorage.setItem('jj_admin_bypass', 'true');
         window.location.hash = '#admin';
         setAdminClicks(0);
       } else {
@@ -635,31 +636,6 @@ function Portfolio() {
                     <div className="service-icon">{s.icon}</div>
                     <div className="service-title">{s.title}</div>
                     <div className="service-desc">{s.desc}</div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </>
-        )}
-
-        {experience.length > 0 && (
-          <>
-            <div className="section-divider"></div>
-            <section id="experience">
-              <div className="section-tag reveal">My journey</div>
-              <div className="section-title reveal">Experience</div>
-              <div className="exp-timeline">
-                {experience.map((ex, i) => (
-                  <div key={i} className="exp-item reveal">
-                    <div className="exp-dot"></div>
-                    <div className="exp-content">
-                      <div className="exp-header">
-                        <div className="exp-role">{ex.role}</div>
-                        <div className="exp-period">{ex.period}</div>
-                      </div>
-                      <div className="exp-company">{ex.company}</div>
-                      <div className="exp-desc">{ex.desc}</div>
-                    </div>
                   </div>
                 ))}
               </div>

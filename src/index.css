@@ -1117,18 +1117,6 @@ footer {
 }
 
 /* About Section Expand/Collapse */
-.hero-about.collapsed .about-text-compact {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.hero-about.expanded .about-text-compact {
-  display: block;
-}
-
 .about-expand-btn {
   display: none;
   background: none;
@@ -1166,6 +1154,18 @@ footer {
 }
 
 @media (max-width: 768px) {
+  .hero-about.collapsed .about-text-compact {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .hero-about.expanded .about-text-compact {
+    display: block;
+  }
+
   .about-expand-btn {
     display: flex;
   }
