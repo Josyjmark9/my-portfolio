@@ -62,6 +62,7 @@ function Portfolio() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [visitorCount, setVisitorCount] = useState(0);
   const [typedText, setTypedText] = useState('');
+  const [isTypingDone, setIsTypingDone] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [filter, setFilter] = useState('all');
   const [projects, setProjects] = useState<any[]>([]);
@@ -194,6 +195,7 @@ function Portfolio() {
   // Typing animation
   useEffect(() => {
     if (!isLoaded) return;
+    setIsTypingDone(false);
     const tagline = profile.tagline || 'Creative ideas that drive growth';
     let i = 0;
     const type = () => {
@@ -201,6 +203,8 @@ function Portfolio() {
         setTypedText(tagline.slice(0, i));
         i++;
         setTimeout(type, 60);
+      } else {
+        setIsTypingDone(true);
       }
     };
     const timer = setTimeout(type, 200);
@@ -398,7 +402,7 @@ function Portfolio() {
                 <div className="hero-greeting">{settings.heroGreeting || 'Hello, I am'}</div>
                 <div className="hero-name">{profile.name?.split(' ')[0] || 'Josiah'} <span>{profile.name?.split(' ').slice(1).join(' ') || 'Johnmark'}</span></div>
                 <div className="hero-tagline">
-                  <span>{typedText}</span><span className="cursor-blink">|</span>
+                  <span>{typedText}</span>{!isTypingDone && <span className="cursor-blink">|</span>}
                 </div>
                 <div className="hero-roles">
                   <div className="pill">Pencil Artist</div>
