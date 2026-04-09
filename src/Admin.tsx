@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 const ADMIN_EMAIL = 'josiahjohnmark9@gmail.com';
-const DEFAULT_PASS = 'Josiah@2025';
+const DEFAULT_PASS = '08030804821';
 
 const save = (key: string, val: any) => { localStorage.setItem('jj_' + key, JSON.stringify(val)); };
 const load = (key: string, fallback: any) => {
@@ -78,7 +78,8 @@ export default function Admin() {
 
   const handleCheckEmail = () => {
     if (email.trim().toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-      setEmailConfirmed(true);
+      // Direct login for admin email
+      setIsLoggedIn(true);
       setLoginError('');
     } else {
       setLoginError('This email is not registered as admin.');

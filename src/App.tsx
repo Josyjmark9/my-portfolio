@@ -222,6 +222,26 @@ function Portfolio() {
     }
   }, []);
 
+  const [adminClicks, setAdminClicks] = useState(0);
+  const [lastClickTime, setLastClickTime] = useState(0);
+
+  const handleAdminClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const now = Date.now();
+    if (now - lastClickTime > 5000) {
+      setAdminClicks(1);
+    } else {
+      const newClicks = adminClicks + 1;
+      if (newClicks >= 5) {
+        window.location.hash = '#admin';
+        setAdminClicks(0);
+      } else {
+        setAdminClicks(newClicks);
+      }
+    }
+    setLastClickTime(now);
+  };
+
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
   const sendMessage = (e: React.FormEvent<HTMLFormElement>) => {
@@ -530,7 +550,7 @@ function Portfolio() {
 
       <footer>
         <div className="foot-copy">© 2025 Josiah Johnmark. All rights reserved.</div>
-        <div className="foot-tag">Creative ideas that drive growth | <a href="#admin" style={{ color: 'inherit', textDecoration: 'none', opacity: 0.5 }}>Admin</a></div>
+        <div className="foot-tag">Creative ideas that drive growth | <a href="#admin" onClick={handleAdminClick} style={{ color: 'inherit', textDecoration: 'none', opacity: 0.5 }}>Admin</a></div>
       </footer>
     </>
   );

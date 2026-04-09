@@ -27,6 +27,10 @@ html {
   scroll-behavior: smooth;
 }
 
+input, textarea, select, button, a {
+  cursor: auto !important;
+}
+
 body {
   background: var(--bg);
   color: var(--text);
@@ -201,7 +205,6 @@ nav {
   text-transform: uppercase;
   transition: color 0.2s;
   position: relative;
-  cursor: none;
 }
 
 .nav-link::after {
@@ -227,7 +230,6 @@ nav {
   display: none;
   flex-direction: column;
   gap: 5px;
-  cursor: none;
   padding: 4px;
 }
 
@@ -322,7 +324,6 @@ section {
   transform-style: preserve-3d;
   transition: transform 0.1s ease;
   will-change: transform;
-  cursor: none;
 }
 
 .photo-ring-1 {
@@ -468,7 +469,6 @@ section {
   border-radius: 20px;
   font-size: 12px;
   color: rgba(255, 255, 255, 0.65);
-  cursor: none;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -547,7 +547,6 @@ section {
   color: #fff;
   font-size: 14px;
   font-weight: 600;
-  cursor: none;
   font-family: 'Rajdhani', sans-serif;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -567,7 +566,6 @@ section {
   color: rgba(255, 255, 255, 0.7);
   font-size: 14px;
   font-weight: 600;
-  cursor: none;
   font-family: 'Rajdhani', sans-serif;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -615,7 +613,6 @@ a.btn-outline, a.btn-primary {
   background: var(--glass);
   border: 1px solid var(--glass-border);
   position: relative;
-  cursor: none;
   transform-style: preserve-3d;
   transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s;
   will-change: transform;
@@ -702,7 +699,6 @@ a.btn-outline, a.btn-primary {
   border-radius: 6px;
   font-size: 11px;
   font-weight: 600;
-  cursor: none;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   font-family: 'Rajdhani', sans-serif;
