@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import Admin from './Admin';
 
 // ---- DATA FROM ADMIN (Simulated or from LocalStorage) ----
@@ -27,6 +28,36 @@ export default function App() {
   return <Portfolio />;
 }
 
+function HeroAnimation() {
+  const icons = ['🎮', '💻', '✏️'];
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setIndex((prev) => (prev + 1) % icons.length);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="hero-visual-anim">
+      <div className="vintage-glow"></div>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={index}
+          initial={{ opacity: 0, scale: 0.8, y: 20 }}
+          animate={{ opacity: 0.4, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 1.2, y: -20 }}
+          transition={{ duration: 1, ease: "easeInOut" }}
+          className="anim-icon-wrap"
+        >
+          {icons[index]}
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+}
+
 function Portfolio() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [visitorCount, setVisitorCount] = useState(0);
@@ -38,6 +69,8 @@ function Portfolio() {
   const [socials, setSocials] = useState<any>({});
   const [settings, setSettings] = useState<any>({});
   const [sections, setSections] = useState<any>({});
+  const [services, setServices] = useState<any[]>([]);
+  const [experience, setExperience] = useState<any[]>([]);
   const [formSuccess, setFormSuccess] = useState(false);
 
   const cursorRef = useRef<HTMLDivElement>(null);
@@ -196,12 +229,16 @@ function Portfolio() {
     const socialsData = getData('socials', {});
     const settingsData = getData('settings', {});
     const sectionsData = getData('sections', {});
+    const servicesData = getData('services', []);
+    const experienceData = getData('experience', []);
 
     setProfile(profileData);
     setProjects(projectsData);
     setSocials(socialsData);
     setSettings(settingsData);
     setSections(sectionsData);
+    setServices(servicesData);
+    setExperience(experienceData);
 
     // Visitor count
     let count = parseInt(localStorage.getItem('jj_visitors') || '0');
@@ -317,7 +354,7 @@ function Portfolio() {
       <canvas id="particles" ref={canvasRef}></canvas>
 
       <nav id="navbar">
-        <div className="nav-logo"><span>J</span>osiah Johnmark</div>
+        <div className="nav-logo">{settings.siteName || 'Josiah Johnmark'}</div>
         <div className="nav-links">
           <a href="#hero" className="nav-link">Home</a>
           <a href="#projects" className="nav-link">Work</a>
@@ -350,14 +387,7 @@ function Portfolio() {
             )}
 
             <div className="hero-top">
-              <div
-                className="photo-outer tilt-el"
-                data-max="18"
-                onMouseMove={handleTilt}
-                onMouseLeave={resetTilt}
-              >
-                <div className="photo-ring-1"></div>
-                <div className="photo-ring-2"></div>
+              <div className="photo-outer">
                 <div className="photo-circle">
                   <div className="photo-glow-spot"></div>
                   {profile.photo ? (
@@ -368,8 +398,10 @@ function Portfolio() {
                 </div>
               </div>
 
+              <HeroAnimation />
+
               <div className="hero-identity">
-                <div className="hero-greeting">Hello, I am</div>
+                <div className="hero-greeting">{settings.heroGreeting || 'Hello, I am'}</div>
                 <div className="hero-name">{profile.name?.split(' ')[0] || 'Josiah'} <span>{profile.name?.split(' ').slice(1).join(' ') || 'Johnmark'}</span></div>
                 <div className="hero-tagline">
                   <span>{typedText}</span><span className="cursor-blink">|</span>
@@ -448,6 +480,94 @@ function Portfolio() {
                       <ProjectCard key={idx} project={p} handleTilt={handleTilt} resetTilt={resetTilt} />
                     ))
                 )}
+              </div>
+            </section>
+          </>
+        )}
+
+        {services.length > 0 && (
+          <>
+            <div className="section-divider"></div>
+            <section id="services">
+              <div className="section-tag reveal">What I offer</div>
+              <div className="section-title reveal">Services</div>
+              <div className="services-grid">
+                {services.map((s, i) => (
+                  <div key={i} className="service-card reveal">
+                    <div className="service-icon">{s.icon}</div>
+                    <div className="service-title">{s.title}</div>
+                    <div className="service-desc">{s.desc}</div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </>
+        )}
+
+        {experience.length > 0 && (
+          <>
+            <div className="section-divider"></div>
+            <section id="experience">
+              <div className="section-tag reveal">My journey</div>
+              <div className="section-title reveal">Experience</div>
+              <div className="exp-timeline">
+                {experience.map((ex, i) => (
+                  <div key={i} className="exp-item reveal">
+                    <div className="exp-dot"></div>
+                    <div className="exp-content">
+                      <div className="exp-header">
+                        <div className="exp-role">{ex.role}</div>
+                        <div className="exp-period">{ex.period}</div>
+                      </div>
+                      <div className="exp-company">{ex.company}</div>
+                      <div className="exp-desc">{ex.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </>
+        )}
+
+        {services.length > 0 && (
+          <>
+            <div className="section-divider"></div>
+            <section id="services">
+              <div className="section-tag reveal">What I offer</div>
+              <div className="section-title reveal">Services</div>
+              <div className="services-grid">
+                {services.map((s, i) => (
+                  <div key={i} className="service-card reveal">
+                    <div className="service-icon">{s.icon}</div>
+                    <div className="service-title">{s.title}</div>
+                    <div className="service-desc">{s.desc}</div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </>
+        )}
+
+        {experience.length > 0 && (
+          <>
+            <div className="section-divider"></div>
+            <section id="experience">
+              <div className="section-tag reveal">My journey</div>
+              <div className="section-title reveal">Experience</div>
+              <div className="exp-timeline">
+                {experience.map((ex, i) => (
+                  <div key={i} className="exp-item reveal">
+                    <div className="exp-dot"></div>
+                    <div className="exp-content">
+                      <div className="exp-header">
+                        <div className="exp-role">{ex.role}</div>
+                        <div className="exp-period">{ex.period}</div>
+                      </div>
+                      <div className="exp-company">{ex.company}</div>
+                      <div className="exp-desc">{ex.desc}</div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </section>
           </>
@@ -549,7 +669,7 @@ function Portfolio() {
       </main>
 
       <footer>
-        <div className="foot-copy">© 2025 Josiah Johnmark. All rights reserved.</div>
+        <div className="foot-copy">{settings.footerText || '© 2025 Josiah Johnmark. All rights reserved.'}</div>
         <div className="foot-tag">Creative ideas that drive growth | <a href="#admin" onClick={handleAdminClick} style={{ color: 'inherit', textDecoration: 'none', opacity: 0.5 }}>Admin</a></div>
       </footer>
     </>

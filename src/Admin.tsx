@@ -30,9 +30,13 @@ export default function Admin() {
   const [settings, setSettings] = useState<any>({});
   const [sections, setSections] = useState<any>({});
   const [messages, setMessages] = useState<any[]>([]);
+  const [services, setServices] = useState<any[]>([]);
+  const [experience, setExperience] = useState<any[]>([]);
 
   const [newProject, setNewProject] = useState<any>({ title: '', skill: '', desc: '', link: '', gameLink: '', emoji: '', image: null });
   const [newSkill, setNewSkill] = useState('');
+  const [newService, setNewService] = useState({ title: '', desc: '', icon: '' });
+  const [newExp, setNewExp] = useState({ role: '', company: '', period: '', desc: '' });
   const [passwords, setPasswords] = useState({ current: '', new: '', confirm: '' });
   const [securityError, setSecurityError] = useState('');
 
@@ -53,6 +57,8 @@ export default function Admin() {
     const socialsData = load('socials', {});
     const settingsData = load('settings', {});
     const sectionsData = load('sections', {});
+    const servicesData = load('services', []);
+    const experienceData = load('experience', []);
 
     setStats({
       visitors,
@@ -67,6 +73,8 @@ export default function Admin() {
     setSocials(socialsData);
     setSettings(settingsData);
     setSections(sectionsData);
+    setServices(servicesData);
+    setExperience(experienceData);
   };
 
   const showToast = (key: string) => {
@@ -203,6 +211,36 @@ export default function Admin() {
     showToast('sections');
   };
 
+  const addService = () => {
+    if (!newService.title) return;
+    const updated = [...services, newService];
+    setServices(updated);
+    save('services', updated);
+    setNewService({ title: '', desc: '', icon: '' });
+    showToast('services');
+  };
+
+  const deleteService = (index: number) => {
+    const updated = services.filter((_, i) => i !== index);
+    setServices(updated);
+    save('services', updated);
+  };
+
+  const addExperience = () => {
+    if (!newExp.role) return;
+    const updated = [...experience, newExp];
+    setExperience(updated);
+    save('experience', updated);
+    setNewExp({ role: '', company: '', period: '', desc: '' });
+    showToast('experience');
+  };
+
+  const deleteExperience = (index: number) => {
+    const updated = experience.filter((_, i) => i !== index);
+    setExperience(updated);
+    save('experience', updated);
+  };
+
   const deleteMessage = (index: number) => {
     const updatedMessages = messages.filter((_, i) => i !== index);
     setMessages(updatedMessages);
@@ -229,6 +267,7 @@ export default function Admin() {
           <div className="login-box">
             <div className="login-logo">JJ Admin</div>
             <div className="login-sub">Portfolio Control Panel</div>
+            <a href="/" style={{ color: 'var(--blue)', textDecoration: 'none', fontSize: '13px', marginBottom: '20px', display: 'inline-block' }}>⬅️ Back to site</a>
 
             <div className="form-group">
               <label className="form-label">Email address</label>
@@ -280,7 +319,9 @@ export default function Admin() {
         <nav className="dash-nav">
           <div className="dash-logo">JJ Admin</div>
           <div className="dash-nav-right">
-            <a href="/" target="_blank" className="dash-nav-link">View site</a>
+            <a href="/" className="dash-nav-link" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: '18px' }}>⬅️</span> Back to site
+            </a>
             <button className="logout-btn" onClick={handleLogout}>Logout</button>
           </div>
         </nav>
@@ -309,8 +350,17 @@ export default function Admin() {
             <div className={`sidebar-item ${activePanel === 'socials' ? 'active' : ''}`} onClick={() => setActivePanel('socials')}>
               <span className="sidebar-icon">🔗</span> Social Links
             </div>
+            <div className={`sidebar-item ${activePanel === 'services' ? 'active' : ''}`} onClick={() => setActivePanel('services')}>
+              <span className="sidebar-icon">🛠️</span> Services
+            </div>
+            <div className={`sidebar-item ${activePanel === 'experience' ? 'active' : ''}`} onClick={() => setActivePanel('experience')}>
+              <span className="sidebar-icon">💼</span> Experience
+            </div>
 
             <div className="sidebar-section">Site Control</div>
+            <div className={`sidebar-item ${activePanel === 'config' ? 'active' : ''}`} onClick={() => setActivePanel('config')}>
+              <span className="sidebar-icon">⚙️</span> Site Config
+            </div>
             <div className={`sidebar-item ${activePanel === 'appearance' ? 'active' : ''}`} onClick={() => setActivePanel('appearance')}>
               <span className="sidebar-icon">🎨</span> Appearance
             </div>
@@ -549,6 +599,117 @@ export default function Admin() {
                   </div>
                   <button className="save-btn" onClick={saveSocials}>Save links</button>
                   <span className={`saved-toast ${toasts.socials ? 'show' : ''}`}>Saved!</span>
+                </div>
+              </div>
+            )}
+
+            {/* SITE CONFIG PANEL */}
+            {activePanel === 'config' && (
+              <div className="dash-panel active">
+                <div className="panel-title">Site configuration</div>
+                <div className="panel-sub">Global settings for your portfolio.</div>
+                <div className="admin-card">
+                  <div className="form-row">
+                    <div className="aform-group">
+                      <label className="aform-label">Site name (Navbar)</label>
+                      <input type="text" className="aform-input" value={settings.siteName || ''} onChange={(e) => setSettings({ ...settings, siteName: e.target.value })} placeholder="Josiah Johnmark" />
+                    </div>
+                    <div className="aform-group">
+                      <label className="aform-label">Hero greeting</label>
+                      <input type="text" className="aform-input" value={settings.heroGreeting || ''} onChange={(e) => setSettings({ ...settings, heroGreeting: e.target.value })} placeholder="Hello, I am" />
+                    </div>
+                    <div className="aform-group full">
+                      <label className="aform-label">Footer copyright text</label>
+                      <input type="text" className="aform-input" value={settings.footerText || ''} onChange={(e) => setSettings({ ...settings, footerText: e.target.value })} placeholder="© 2025 Josiah Johnmark. All rights reserved." />
+                    </div>
+                  </div>
+                  <button className="save-btn" onClick={saveAppearance}>Save config</button>
+                  <span className={`saved-toast ${toasts.appearance ? 'show' : ''}`}>Saved!</span>
+                </div>
+              </div>
+            )}
+
+            {/* SERVICES PANEL */}
+            {activePanel === 'services' && (
+              <div className="dash-panel active">
+                <div className="panel-title">Services</div>
+                <div className="panel-sub">List the professional services you offer.</div>
+                <div className="admin-card">
+                  <div className="admin-card-title">Add new service</div>
+                  <div className="form-row">
+                    <div className="aform-group">
+                      <label className="aform-label">Service title</label>
+                      <input type="text" className="aform-input" value={newService.title} onChange={(e) => setNewService({ ...newService, title: e.target.value })} placeholder="Pencil Portraiture" />
+                    </div>
+                    <div className="aform-group">
+                      <label className="aform-label">Icon emoji</label>
+                      <input type="text" className="aform-input" value={newService.icon} onChange={(e) => setNewService({ ...newService, icon: e.target.value })} placeholder="✏️" />
+                    </div>
+                    <div className="aform-group full">
+                      <label className="aform-label">Description</label>
+                      <textarea className="aform-textarea" rows={2} value={newService.desc} onChange={(e) => setNewService({ ...newService, desc: e.target.value })} placeholder="Detailed realistic pencil drawings..."></textarea>
+                    </div>
+                  </div>
+                  <button className="save-btn" onClick={addService}>Add service</button>
+                  <span className={`saved-toast ${toasts.services ? 'show' : ''}`}>Service added!</span>
+                </div>
+                <div className="admin-card">
+                  <div className="admin-card-title">Current services</div>
+                  <div className="proj-list">
+                    {services.map((s, i) => (
+                      <div key={i} className="proj-list-item">
+                        <div className="proj-list-item-info">
+                          <div className="proj-list-item-title">{s.icon} {s.title}</div>
+                        </div>
+                        <button className="del-btn" onClick={() => deleteService(i)}>Delete</button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* EXPERIENCE PANEL */}
+            {activePanel === 'experience' && (
+              <div className="dash-panel active">
+                <div className="panel-title">Experience</div>
+                <div className="panel-sub">Your professional journey and milestones.</div>
+                <div className="admin-card">
+                  <div className="admin-card-title">Add experience</div>
+                  <div className="form-row">
+                    <div className="aform-group">
+                      <label className="aform-label">Role / Position</label>
+                      <input type="text" className="aform-input" value={newExp.role} onChange={(e) => setNewExp({ ...newExp, role: e.target.value })} placeholder="Lead Artist" />
+                    </div>
+                    <div className="aform-group">
+                      <label className="aform-label">Company / Studio</label>
+                      <input type="text" className="aform-input" value={newExp.company} onChange={(e) => setNewExp({ ...newExp, company: e.target.value })} placeholder="Freelance" />
+                    </div>
+                    <div className="aform-group">
+                      <label className="aform-label">Period</label>
+                      <input type="text" className="aform-input" value={newExp.period} onChange={(e) => setNewExp({ ...newExp, period: e.target.value })} placeholder="2020 - Present" />
+                    </div>
+                    <div className="aform-group full">
+                      <label className="aform-label">Description</label>
+                      <textarea className="aform-textarea" rows={2} value={newExp.desc} onChange={(e) => setNewExp({ ...newExp, desc: e.target.value })} placeholder="Responsibilities and achievements..."></textarea>
+                    </div>
+                  </div>
+                  <button className="save-btn" onClick={addExperience}>Add experience</button>
+                  <span className={`saved-toast ${toasts.experience ? 'show' : ''}`}>Experience added!</span>
+                </div>
+                <div className="admin-card">
+                  <div className="admin-card-title">Timeline</div>
+                  <div className="proj-list">
+                    {experience.map((ex, i) => (
+                      <div key={i} className="proj-list-item">
+                        <div className="proj-list-item-info">
+                          <div className="proj-list-item-title">{ex.role} @ {ex.company}</div>
+                          <div className="proj-list-item-meta">{ex.period}</div>
+                        </div>
+                        <button className="del-btn" onClick={() => deleteExperience(i)}>Delete</button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
