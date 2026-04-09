@@ -1,25 +1,53 @@
 import React, { useEffect, useState } from 'react';
+import { 
+  LogOut, 
+  ArrowLeft, 
+  Loader2, 
+  Save, 
+  Trash2, 
+  Plus, 
+  ExternalLink, 
+  Shield, 
+  Settings, 
+  Layout, 
+  Palette, 
+  Share2, 
+  Briefcase, 
+  Zap, 
+  User, 
+  MessageSquare, 
+  BarChart3,
+  Camera,
+  FileText,
+  CheckCircle2,
+  AlertCircle,
+  Globe
+} from 'lucide-react';
+import { 
+  auth, 
+  db, 
+  googleProvider, 
+  signInWithPopup, 
+  signOut, 
+  onAuthStateChanged, 
+  collection, 
+  doc, 
+  onSnapshot, 
+  query, 
+  orderBy, 
+  addDoc, 
+  setDoc, 
+  updateDoc, 
+  deleteDoc 
+} from './firebase';
 
 const ADMIN_EMAIL = 'josiahjohnmark9@gmail.com';
-const DEFAULT_PASS = '08030804821';
-
-const save = (key: string, val: any) => { localStorage.setItem('jj_' + key, JSON.stringify(val)); };
-const load = (key: string, fallback: any) => {
-  try {
-    const v = localStorage.getItem('jj_' + key);
-    return v ? JSON.parse(v) : fallback;
-  } catch (e) {
-    return fallback;
-  }
-};
 
 export default function Admin() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [emailConfirmed, setEmailConfirmed] = useState(false);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [loginError, setLoginError] = useState('');
-  const [showForgot, setShowForgot] = useState(false);
+  const [isSaving, setIsSaving] = useState<any>({});
 
   const [activePanel, setActivePanel] = useState('stats');
   const [stats, setStats] = useState({ visitors: 0, projects: 0, skills: 0, messages: 0 });
@@ -44,46 +72,74 @@ export default function Admin() {
   const [toasts, setToasts] = useState<any>({});
 
   useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      if (user && user.email === ADMIN_EMAIL) {
+        setIsLoggedIn(true);
+      } else {
+        setIsLoggedIn(false);
+      }
+      setIsAuthChecking(false);
+    });
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
     if (isLoggedIn) {
-      refreshData();
+      const unsubProjects = onSnapshot(query(collection(db, 'projects'), orderBy('date', 'desc')), (snap) => {
+        setProjects(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      });
+      const unsubMessages = onSnapshot(query(collection(db, 'messages'), orderBy('date', 'desc')), (snap) => {
+        setMessages(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      });
+      const unsubProfile = onSnapshot(doc(db, 'profile', 'main'), (snap) => {
+        if (snap.exists()) setProfile(snap.data());
+      });
+      const unsubSocials = onSnapshot(collection(db, 'socials'), (snap) => {
+        const s: any = {};
+        snap.docs.forEach(doc => {
+          const data = doc.data();
+          s[data.platform] = data.url;
+        });
+        setSocials(s);
+      });
+      const unsubSettings = onSnapshot(doc(db, 'settings', 'main'), (snap) => {
+        if (snap.exists()) setSettings(snap.data());
+      });
+      const unsubServices = onSnapshot(collection(db, 'services'), (snap) => {
+        setServices(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      });
+      const unsubExperience = onSnapshot(collection(db, 'experience'), (snap) => {
+        setExperience(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      });
+      const unsubVisibility = onSnapshot(doc(db, 'config', 'visibility'), (snap) => {
+        if (snap.exists()) setSections(snap.data());
+      });
+      const unsubBackgrounds = onSnapshot(doc(db, 'config', 'backgrounds'), (snap) => {
+        if (snap.exists()) setSectionBackgrounds(snap.data());
+      });
+
+      return () => {
+        unsubProjects();
+        unsubMessages();
+        unsubProfile();
+        unsubSocials();
+        unsubSettings();
+        unsubServices();
+        unsubExperience();
+        unsubVisibility();
+        unsubBackgrounds();
+      };
     }
   }, [isLoggedIn]);
 
-  const refreshData = () => {
-    const visitors = parseInt(localStorage.getItem('jj_visitors') || '0');
-    const projectsData = load('projects', []);
-    const skillsData = load('skills', ['Pencil Art', 'Game Dev', 'App Dev', 'Web Dev']);
-    const messagesData = load('messages', []);
-    const profileData = load('profile', {});
-    const socialsData = load('socials', {});
-    const settingsData = load('settings', {});
-    const sectionsData = load('sections', {});
-    const sectionBackgroundsData = load('sectionBackgrounds', {});
-    const servicesData = load('services', []);
-    const experienceData = load('experience', []);
-
+  useEffect(() => {
     setStats({
-      visitors,
-      projects: projectsData.length,
-      skills: skillsData.length,
-      messages: messagesData.length
+      visitors: 0, // We'll need a way to track visitors in Firestore if needed
+      projects: projects.length,
+      skills: 4, // Fixed for now
+      messages: messages.filter(m => !m.read).length
     });
-    setProjects(projectsData);
-    setSkills(skillsData);
-    setMessages(messagesData);
-    setProfile({
-      name: 'Josiah Johnmark',
-      tagline: 'Creative ideas that drive growth',
-      photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?fit=crop&w=500&h=500&q=80',
-      ...profileData
-    });
-    setSocials(socialsData);
-    setSettings(settingsData);
-    setSections(sectionsData);
-    setSectionBackgrounds(sectionBackgroundsData);
-    setServices(servicesData);
-    setExperience(experienceData);
-  };
+  }, [projects, messages]);
 
   const showToast = (key: string) => {
     setToasts((prev: any) => ({ ...prev, [key]: true }));
@@ -92,31 +148,21 @@ export default function Admin() {
     }, 2500);
   };
 
-  const handleCheckEmail = () => {
-    if (email.trim().toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-      // Direct login for admin email
-      setIsLoggedIn(true);
-      setLoginError('');
-    } else {
-      setLoginError('This email is not registered as admin.');
-    }
-  };
-
-  const handleLogin = () => {
-    const storedPass = load('adminpass', DEFAULT_PASS);
-    if (password === storedPass) {
-      setIsLoggedIn(true);
-      setLoginError('');
-    } else {
-      setLoginError('Incorrect password. Please try again.');
+  const handleGoogleLogin = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      if (result.user.email !== ADMIN_EMAIL) {
+        await signOut(auth);
+        setLoginError('Access denied. Only the administrator can log in.');
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      setLoginError('Failed to log in with Google.');
     }
   };
 
   const handleLogout = () => {
-    setIsLoggedIn(false);
-    setEmailConfirmed(false);
-    setEmail('');
-    setPassword('');
+    signOut(auth);
   };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -129,28 +175,35 @@ export default function Admin() {
     reader.readAsDataURL(file);
   };
 
-  const saveProfile = () => {
-    save('profile', profile);
-    showToast('profile');
+  const saveProfile = async () => {
+    setIsSaving((prev: any) => ({ ...prev, profile: true }));
+    try {
+      await setDoc(doc(db, 'profile', 'main'), profile);
+      showToast('profile');
+    } catch (error) {
+      console.error("Error saving profile:", error);
+    } finally {
+      setIsSaving((prev: any) => ({ ...prev, profile: false }));
+    }
   };
 
   const handleCVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
       const updatedProfile = { ...profile, cv: ev.target?.result };
       setProfile(updatedProfile);
-      save('profile', updatedProfile);
+      await setDoc(doc(db, 'profile', 'main'), updatedProfile);
     };
     reader.readAsDataURL(file);
   };
 
-  const removeCV = () => {
+  const removeCV = async () => {
     const updatedProfile = { ...profile };
     delete updatedProfile.cv;
     setProfile(updatedProfile);
-    save('profile', updatedProfile);
+    await setDoc(doc(db, 'profile', 'main'), updatedProfile);
   };
 
   const handleProjectImage = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -163,110 +216,173 @@ export default function Admin() {
     reader.readAsDataURL(file);
   };
 
-  const addProject = () => {
+  const addProject = async () => {
     if (!newProject.title || !newProject.skill) {
       alert('Please add a title and select a skill.');
       return;
     }
-    const updatedProjects = [...projects, newProject];
-    setProjects(updatedProjects);
-    save('projects', updatedProjects);
-    setNewProject({ title: '', skill: '', desc: '', link: '', gameLink: '', emoji: '', image: null });
-    refreshData();
-    showToast('projects');
-  };
-
-  const deleteProject = (index: number) => {
-    if (!confirm('Delete this project?')) return;
-    const updatedProjects = projects.filter((_, i) => i !== index);
-    setProjects(updatedProjects);
-    save('projects', updatedProjects);
-    refreshData();
-  };
-
-  const addSkill = () => {
-    if (!newSkill.trim()) return;
-    if (!skills.includes(newSkill.trim())) {
-      const updatedSkills = [...skills, newSkill.trim()];
-      setSkills(updatedSkills);
-      save('skills', updatedSkills);
-      refreshData();
+    setIsSaving((prev: any) => ({ ...prev, projects: true }));
+    try {
+      await addDoc(collection(db, 'projects'), {
+        ...newProject,
+        date: new Date().toISOString()
+      });
+      setNewProject({ title: '', skill: '', desc: '', link: '', gameLink: '', emoji: '', image: null });
+      showToast('projects');
+    } catch (error) {
+      console.error("Error adding project:", error);
+    } finally {
+      setIsSaving((prev: any) => ({ ...prev, projects: false }));
     }
-    setNewSkill('');
   };
 
-  const deleteSkill = (index: number) => {
-    const updatedSkills = skills.filter((_, i) => i !== index);
-    setSkills(updatedSkills);
-    save('skills', updatedSkills);
-    refreshData();
+  const deleteProject = async (id: string) => {
+    if (!confirm('Delete this project?')) return;
+    try {
+      await deleteDoc(doc(db, 'projects', id));
+    } catch (error) {
+      console.error("Error deleting project:", error);
+    }
   };
 
-  const saveSocials = () => {
-    save('socials', socials);
-    showToast('socials');
+  const addSkill = async () => {
+    if (!newSkill.trim()) return;
+    setIsSaving((prev: any) => ({ ...prev, skills: true }));
+    try {
+      // Skills are just a list, we can store them in a single doc or separate docs.
+      // For simplicity, let's keep them in a collection.
+      await addDoc(collection(db, 'skills'), { name: newSkill.trim() });
+      setNewSkill('');
+    } catch (error) {
+      console.error("Error adding skill:", error);
+    } finally {
+      setIsSaving((prev: any) => ({ ...prev, skills: false }));
+    }
   };
 
-  const saveAppearance = () => {
-    save('settings', settings);
-    if (settings.glowColor) document.documentElement.style.setProperty('--glow-color', settings.glowColor);
-    if (settings.glowIntensity !== undefined) document.documentElement.style.setProperty('--glow-intensity', settings.glowIntensity);
-    showToast('appearance');
+  const deleteSkill = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'skills', id));
+    } catch (error) {
+      console.error("Error deleting skill:", error);
+    }
   };
 
-  const saveSections = () => {
-    save('sections', sections);
-    save('sectionBackgrounds', sectionBackgrounds);
-    showToast('sections');
+  const saveSocials = async () => {
+    setIsSaving((prev: any) => ({ ...prev, socials: true }));
+    try {
+      // Socials are stored as platform: url. We can update each doc.
+      for (const platform in socials) {
+        await setDoc(doc(db, 'socials', platform), { platform, url: socials[platform] });
+      }
+      showToast('socials');
+    } catch (error) {
+      console.error("Error saving socials:", error);
+    } finally {
+      setIsSaving((prev: any) => ({ ...prev, socials: false }));
+    }
   };
 
-  const addService = () => {
+  const saveAppearance = async () => {
+    setIsSaving((prev: any) => ({ ...prev, appearance: true }));
+    try {
+      await setDoc(doc(db, 'settings', 'main'), settings);
+      if (settings.glowColor) document.documentElement.style.setProperty('--glow-color', settings.glowColor);
+      if (settings.glowIntensity !== undefined) document.documentElement.style.setProperty('--glow-intensity', settings.glowIntensity);
+      showToast('appearance');
+    } catch (error) {
+      console.error("Error saving appearance:", error);
+    } finally {
+      setIsSaving((prev: any) => ({ ...prev, appearance: false }));
+    }
+  };
+
+  const saveSections = async () => {
+    setIsSaving((prev: any) => ({ ...prev, sections: true }));
+    try {
+      await setDoc(doc(db, 'config', 'visibility'), sections);
+      await setDoc(doc(db, 'config', 'backgrounds'), sectionBackgrounds);
+      showToast('sections');
+    } catch (error) {
+      console.error("Error saving sections:", error);
+    } finally {
+      setIsSaving((prev: any) => ({ ...prev, sections: false }));
+    }
+  };
+
+  const addService = async () => {
     if (!newService.title) return;
-    const updated = [...services, newService];
-    setServices(updated);
-    save('services', updated);
-    setNewService({ title: '', desc: '', icon: '' });
-    showToast('services');
+    setIsSaving((prev: any) => ({ ...prev, services: true }));
+    try {
+      await addDoc(collection(db, 'services'), newService);
+      setNewService({ title: '', desc: '', icon: '' });
+      showToast('services');
+    } catch (error) {
+      console.error("Error adding service:", error);
+    } finally {
+      setIsSaving((prev: any) => ({ ...prev, services: false }));
+    }
   };
 
-  const deleteService = (index: number) => {
-    const updated = services.filter((_, i) => i !== index);
-    setServices(updated);
-    save('services', updated);
+  const deleteService = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'services', id));
+    } catch (error) {
+      console.error("Error deleting service:", error);
+    }
   };
 
-  const addExperience = () => {
+  const addExperience = async () => {
     if (!newExp.role) return;
-    const updated = [...experience, newExp];
-    setExperience(updated);
-    save('experience', updated);
-    setNewExp({ role: '', company: '', period: '', desc: '' });
-    showToast('experience');
+    setIsSaving((prev: any) => ({ ...prev, experience: true }));
+    try {
+      await addDoc(collection(db, 'experience'), newExp);
+      setNewExp({ role: '', company: '', period: '', desc: '' });
+      showToast('experience');
+    } catch (error) {
+      console.error("Error adding experience:", error);
+    } finally {
+      setIsSaving((prev: any) => ({ ...prev, experience: false }));
+    }
   };
 
-  const deleteExperience = (index: number) => {
-    const updated = experience.filter((_, i) => i !== index);
-    setExperience(updated);
-    save('experience', updated);
+  const deleteExperience = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'experience', id));
+    } catch (error) {
+      console.error("Error deleting experience:", error);
+    }
   };
 
-  const deleteMessage = (index: number) => {
-    const updatedMessages = messages.filter((_, i) => i !== index);
-    setMessages(updatedMessages);
-    save('messages', updatedMessages);
-    refreshData();
+  const deleteMessage = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'messages', id));
+    } catch (error) {
+      console.error("Error deleting message:", error);
+    }
   };
 
-  const changePassword = () => {
-    const stored = load('adminpass', DEFAULT_PASS);
-    setSecurityError('');
-    if (passwords.current !== stored) { setSecurityError('Current password is wrong.'); return; }
-    if (passwords.new.length < 8) { setSecurityError('New password must be at least 8 characters.'); return; }
-    if (passwords.new !== passwords.confirm) { setSecurityError("Passwords don't match."); return; }
-    save('adminpass', passwords.new);
-    setPasswords({ current: '', new: '', confirm: '' });
-    showToast('security');
+  const markMessageRead = async (id: string) => {
+    try {
+      await updateDoc(doc(db, 'messages', id), { read: true });
+    } catch (error) {
+      console.error("Error marking message as read:", error);
+    }
   };
+
+  const changePassword = async () => {
+    // Password change is handled by Google Auth now.
+    // This section can be removed or repurposed for other security settings.
+    setSecurityError('Password management is handled via your Google Account.');
+  };
+
+  if (isAuthChecking) {
+    return (
+      <div className="admin-body" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--bg)' }}>
+        <Loader2 className="animate-spin" size={48} color="var(--blue)" />
+      </div>
+    );
+  }
 
   if (!isLoggedIn) {
     return (
@@ -276,46 +392,23 @@ export default function Admin() {
           <div className="login-box">
             <div className="login-logo">JJ Admin</div>
             <div className="login-sub">Portfolio Control Panel</div>
-            <a href="/" style={{ color: 'var(--blue)', textDecoration: 'none', fontSize: '13px', marginBottom: '20px', display: 'inline-block' }}>⬅️ Back to site</a>
+            
+            <a href="/" className="back-to-site-link">
+              <ArrowLeft size={16} /> Back to site
+            </a>
 
-            <div className="form-group">
-              <label className="form-label">Email address</label>
-              <input
-                type="email"
-                className="form-input"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="your@gmail.com"
-                disabled={emailConfirmed}
-              />
+            <div className="login-methods">
+              <button className="login-btn google-login" onClick={handleGoogleLogin}>
+                <Globe size={20} />
+                <span>Login with Google</span>
+              </button>
             </div>
-            {emailConfirmed && (
-              <div id="password-group">
-                <div className="form-group">
-                  <label className="form-label">Password</label>
-                  <input
-                    type="password"
-                    className="form-input"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your password"
-                    onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-                    autoFocus
-                  />
-                </div>
-                <div className="forgot-link" onClick={() => setShowForgot(!showForgot)}>Forgot password?</div>
-                {showForgot && (
-                  <div className="forgot-panel" style={{ display: 'block' }}>
-                    To reset your password, send an email to <strong>josiahjohnmark9@gmail.com</strong> from your registered address with the subject: <strong>Reset Admin Password</strong>. You will receive instructions within 24 hours.
-                  </div>
-                )}
-              </div>
-            )}
 
-            <button className="login-btn" onClick={emailConfirmed ? handleLogin : handleCheckEmail}>
-              {emailConfirmed ? 'Login' : 'Continue'}
-            </button>
             {loginError && <div className="login-error" style={{ display: 'block' }}>{loginError}</div>}
+            
+            <div className="login-footer">
+              Only authorized access permitted.
+            </div>
           </div>
         </div>
       </div>
@@ -328,10 +421,12 @@ export default function Admin() {
         <nav className="dash-nav">
           <div className="dash-logo">JJ Admin</div>
           <div className="dash-nav-right">
-            <a href="/" className="dash-nav-link" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '18px' }}>⬅️</span> Back to site
+            <a href="/" className="dash-nav-link back-btn-responsive">
+              <ArrowLeft size={18} /> <span>Back to site</span>
             </a>
-            <button className="logout-btn" onClick={handleLogout}>Logout</button>
+            <button className="logout-btn" onClick={handleLogout}>
+              <LogOut size={16} /> <span>Logout</span>
+            </button>
           </div>
         </nav>
         <div className="dash-body">
@@ -339,45 +434,45 @@ export default function Admin() {
           <div className="sidebar">
             <div className="sidebar-section">Overview</div>
             <div className={`sidebar-item ${activePanel === 'stats' ? 'active' : ''}`} onClick={() => setActivePanel('stats')}>
-              <span className="sidebar-icon">📊</span> Dashboard
+              <BarChart3 size={18} className="sidebar-icon" /> Dashboard
             </div>
             <div className={`sidebar-item ${activePanel === 'messages' ? 'active' : ''}`} onClick={() => setActivePanel('messages')}>
-              <span className="sidebar-icon">💬</span> Messages
+              <MessageSquare size={18} className="sidebar-icon" /> Messages
               {stats.messages > 0 && <span id="msg-badge" style={{ marginLeft: 'auto', fontSize: '10px', color: 'var(--blue)' }}>{stats.messages}</span>}
             </div>
 
             <div className="sidebar-section">My Portfolio</div>
             <div className={`sidebar-item ${activePanel === 'profile' ? 'active' : ''}`} onClick={() => setActivePanel('profile')}>
-              <span className="sidebar-icon">👤</span> Profile
+              <User size={18} className="sidebar-icon" /> Profile
             </div>
             <div className={`sidebar-item ${activePanel === 'projects' ? 'active' : ''}`} onClick={() => setActivePanel('projects')}>
-              <span className="sidebar-icon">🗂️</span> Projects
+              <Briefcase size={18} className="sidebar-icon" /> Projects
             </div>
             <div className={`sidebar-item ${activePanel === 'skills' ? 'active' : ''}`} onClick={() => setActivePanel('skills')}>
-              <span className="sidebar-icon">⚡</span> Skills
+              <Zap size={18} className="sidebar-icon" /> Skills
             </div>
             <div className={`sidebar-item ${activePanel === 'socials' ? 'active' : ''}`} onClick={() => setActivePanel('socials')}>
-              <span className="sidebar-icon">🔗</span> Social Links
+              <Share2 size={18} className="sidebar-icon" /> Social Links
             </div>
             <div className={`sidebar-item ${activePanel === 'services' ? 'active' : ''}`} onClick={() => setActivePanel('services')}>
-              <span className="sidebar-icon">🛠️</span> Services
+              <Settings size={18} className="sidebar-icon" /> Services
             </div>
             <div className={`sidebar-item ${activePanel === 'experience' ? 'active' : ''}`} onClick={() => setActivePanel('experience')}>
-              <span className="sidebar-icon">💼</span> Experience
+              <Briefcase size={18} className="sidebar-icon" /> Experience
             </div>
 
             <div className="sidebar-section">Site Control</div>
             <div className={`sidebar-item ${activePanel === 'config' ? 'active' : ''}`} onClick={() => setActivePanel('config')}>
-              <span className="sidebar-icon">⚙️</span> Site Config
+              <Settings size={18} className="sidebar-icon" /> Site Config
             </div>
             <div className={`sidebar-item ${activePanel === 'appearance' ? 'active' : ''}`} onClick={() => setActivePanel('appearance')}>
-              <span className="sidebar-icon">🎨</span> Appearance
+              <Palette size={18} className="sidebar-icon" /> Appearance
             </div>
             <div className={`sidebar-item ${activePanel === 'sections' ? 'active' : ''}`} onClick={() => setActivePanel('sections')}>
-              <span className="sidebar-icon">👁️</span> Sections
+              <Layout size={18} className="sidebar-icon" /> Sections
             </div>
             <div className={`sidebar-item ${activePanel === 'security' ? 'active' : ''}`} onClick={() => setActivePanel('security')}>
-              <span className="sidebar-icon">🔒</span> Security
+              <Shield size={18} className="sidebar-icon" /> Security
             </div>
           </div>
 

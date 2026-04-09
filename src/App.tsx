@@ -1,16 +1,30 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { 
+  Mail, 
+  Github, 
+  Linkedin, 
+  Instagram, 
+  Twitter, 
+  Send, 
+  ExternalLink, 
+  Play, 
+  ChevronDown, 
+  ChevronUp,
+  Loader2,
+  MessageSquare,
+  Globe,
+  Pencil,
+  Monitor,
+  Gamepad2,
+  Book,
+  Paintbrush,
+  ListTodo,
+  Code,
+  Palette
+} from 'lucide-react';
 import Admin from './Admin';
-
-// ---- DATA FROM ADMIN (Simulated or from LocalStorage) ----
-const getData = (key: string, fallback: any) => {
-  try {
-    const v = localStorage.getItem('jj_' + key);
-    return v ? JSON.parse(v) : fallback;
-  } catch (e) {
-    return fallback;
-  }
-};
+import { db, collection, onSnapshot, query, orderBy, addDoc, doc } from './firebase';
 
 export default function App() {
   const [route, setRoute] = useState(window.location.hash || '#hero');
@@ -28,38 +42,64 @@ export default function App() {
   return <Portfolio />;
 }
 
-function HeroAnimation() {
-  const icons = ['🎮', '💻', '✏️'];
-  const [index, setIndex] = useState(0);
+function FloatingBackgroundIcons({ count = 15, speed = 20 }: { count?: number, speed?: number }) {
+  const icons = [Pencil, Monitor, Gamepad2, Book, Paintbrush, ListTodo, Code, Palette];
+  const [items, setItems] = useState<any[]>([]);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setIndex((prev) => (prev + 1) % icons.length);
-    }, 3000);
-    return () => clearInterval(timer);
-  }, []);
+    const newItems = Array.from({ length: count }).map((_, i) => ({
+      id: i,
+      Icon: icons[Math.floor(Math.random() * icons.length)],
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      size: Math.random() * 20 + 10,
+      duration: Math.random() * speed + speed,
+      delay: Math.random() * -speed,
+      opacity: Math.random() * 0.1 + 0.05,
+      rotate: Math.random() * 360
+    }));
+    setItems(newItems);
+  }, [count, speed]);
 
+  return (
+    <div className="floating-bg-icons" style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
+      {items.map((item) => (
+        <motion.div
+          key={item.id}
+          initial={{ x: `${item.x}%`, y: `${item.y}%`, rotate: item.rotate, opacity: 0 }}
+          animate={{ 
+            y: [`${item.y}%`, `${(item.y + 10) % 100}%`, `${item.y}%`],
+            x: [`${item.x}%`, `${(item.x + 5) % 100}%`, `${item.x}%`],
+            rotate: [item.rotate, item.rotate + 20, item.rotate],
+            opacity: item.opacity
+          }}
+          transition={{ 
+            duration: item.duration, 
+            repeat: Infinity, 
+            ease: "linear",
+            delay: item.delay
+          }}
+          style={{ position: 'absolute', color: 'white', filter: 'grayscale(100%) brightness(0.8)' }}
+        >
+          <item.Icon size={item.size} />
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
+function HeroAnimation() {
   return (
     <div className="hero-visual-anim">
       <div className="vintage-glow"></div>
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={index}
-          initial={{ opacity: 0, scale: 0.8, y: 20 }}
-          animate={{ opacity: 0.4, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 1.2, y: -20 }}
-          transition={{ duration: 1, ease: "easeInOut" }}
-          className="anim-icon-wrap"
-        >
-          {icons[index]}
-        </motion.div>
-      </AnimatePresence>
+      <FloatingBackgroundIcons count={20} speed={25} />
     </div>
   );
 }
 
 function Portfolio() {
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [visitorCount, setVisitorCount] = useState(0);
   const [typedText, setTypedText] = useState('');
   const [isTypingDone, setIsTypingDone] = useState(false);
@@ -74,6 +114,7 @@ function Portfolio() {
   const [services, setServices] = useState<any[]>([]);
   const [experience, setExperience] = useState<any[]>([]);
   const [formSuccess, setFormSuccess] = useState(false);
+  const [isSending, setIsSending] = useState(false);
 
   const cursorRef = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
@@ -81,13 +122,63 @@ function Portfolio() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const statsRef = useRef<HTMLDivElement>(null);
 
+  // Firebase Data Sync
+  useEffect(() => {
+    const unsubProjects = onSnapshot(query(collection(db, 'projects'), orderBy('date', 'desc')), (snap) => {
+      setProjects(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+    const unsubProfile = onSnapshot(doc(db, 'profile', 'main'), (snap) => {
+      if (snap.exists()) setProfile(snap.data());
+    });
+    const unsubSocials = onSnapshot(collection(db, 'socials'), (snap) => {
+      const s: any = {};
+      snap.docs.forEach(doc => {
+        const data = doc.data();
+        s[data.platform] = data.url;
+      });
+      setSocials(s);
+    });
+    const unsubSettings = onSnapshot(doc(db, 'settings', 'main'), (snap) => {
+      if (snap.exists()) setSettings(snap.data());
+    });
+    const unsubServices = onSnapshot(collection(db, 'services'), (snap) => {
+      setServices(snap.docs.map(doc => doc.data()));
+    });
+    const unsubExperience = onSnapshot(collection(db, 'experience'), (snap) => {
+      setExperience(snap.docs.map(doc => doc.data()));
+    });
+    const unsubVisibility = onSnapshot(doc(db, 'config', 'visibility'), (snap) => {
+      if (snap.exists()) setSections(snap.data());
+    });
+    const unsubBackgrounds = onSnapshot(doc(db, 'config', 'backgrounds'), (snap) => {
+      if (snap.exists()) setSectionBackgrounds(snap.data());
+    });
+
+    // Mark data as loaded after a short delay to ensure initial fetch
+    const timer = setTimeout(() => setIsDataLoaded(true), 1000);
+
+    return () => {
+      unsubProjects();
+      unsubProfile();
+      unsubSocials();
+      unsubSettings();
+      unsubServices();
+      unsubExperience();
+      unsubVisibility();
+      unsubBackgrounds();
+      clearTimeout(timer);
+    };
+  }, []);
+
   // Loader effect
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoaded(true);
-    }, 2200);
-    return () => clearTimeout(timer);
-  }, []);
+    if (isDataLoaded) {
+      const timer = setTimeout(() => {
+        setIsLoaded(true);
+      }, 1200);
+      return () => clearTimeout(timer);
+    }
+  }, [isDataLoaded]);
 
   // Cursor logic
   useEffect(() => {
@@ -98,12 +189,10 @@ function Portfolio() {
       mx = e.clientX;
       my = e.clientY;
       if (cursorRef.current) {
-        cursorRef.current.style.left = `${mx}px`;
-        cursorRef.current.style.top = `${my}px`;
+        cursorRef.current.style.transform = `translate3d(${mx}px, ${my}px, 0) translate(-50%, -50%)`;
       }
       if (glowRef.current) {
-        glowRef.current.style.left = `${mx}px`;
-        glowRef.current.style.top = `${my}px`;
+        glowRef.current.style.transform = `translate3d(${mx}px, ${my}px, 0) translate(-50%, -50%)`;
       }
     };
 
@@ -111,8 +200,7 @@ function Portfolio() {
       rx += (mx - rx) * 0.12;
       ry += (my - ry) * 0.12;
       if (ringRef.current) {
-        ringRef.current.style.left = `${rx}px`;
-        ringRef.current.style.top = `${ry}px`;
+        ringRef.current.style.transform = `translate3d(${rx}px, ${ry}px, 0) translate(-50%, -50%)`;
       }
       requestAnimationFrame(animRing);
     };
@@ -144,18 +232,20 @@ function Portfolio() {
     resize();
     window.addEventListener('resize', resize);
 
-    for (let i = 0; i < 80; i++) {
+    for (let i = 0; i < 40; i++) {
       pts.push({
         x: Math.random() * W,
         y: Math.random() * H,
-        vx: (Math.random() - 0.5) * 0.3,
-        vy: (Math.random() - 0.5) * 0.3,
-        r: Math.random() * 1.5 + 0.5
+        vx: (Math.random() - 0.5) * 0.25,
+        vy: (Math.random() - 0.5) * 0.25,
+        r: Math.random() * 1.2 + 0.5
       });
     }
 
     const draw = () => {
       ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = 'rgba(90, 175, 255, 0.4)';
+      
       pts.forEach(p => {
         p.x += p.vx;
         p.y += p.vy;
@@ -163,24 +253,28 @@ function Portfolio() {
         if (p.x > W) p.x = 0;
         if (p.y < 0) p.y = H;
         if (p.y > H) p.y = 0;
+        
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(90, 175, 255, 0.5)';
         ctx.fill();
       });
 
+      ctx.lineWidth = 0.5;
       pts.forEach((a, i) => {
-        pts.slice(i + 1).forEach(b => {
-          const d = Math.hypot(a.x - b.x, a.y - b.y);
-          if (d < 120) {
+        for (let j = i + 1; j < pts.length; j++) {
+          const b = pts[j];
+          const dx = a.x - b.x;
+          const dy = a.y - b.y;
+          const d2 = dx * dx + dy * dy;
+          if (d2 < 6400) { // 80 * 80
+            const d = Math.sqrt(d2);
             ctx.beginPath();
             ctx.moveTo(a.x, a.y);
             ctx.lineTo(b.x, b.y);
-            ctx.strokeStyle = `rgba(90, 175, 255, ${(1 - d / 120) * 0.2})`;
-            ctx.lineWidth = 0.5;
+            ctx.strokeStyle = `rgba(90, 175, 255, ${(1 - d / 80) * 0.15})`;
             ctx.stroke();
           }
-        });
+        }
       });
       requestAnimationFrame(draw);
     };
@@ -227,31 +321,8 @@ function Portfolio() {
     return () => obs.disconnect();
   }, [isLoaded, projects, sections]);
 
-  // Load data
+  // Initial data fetch
   useEffect(() => {
-    const profileData = getData('profile', {});
-    const projectsData = getData('projects', []);
-    const socialsData = getData('socials', {});
-    const settingsData = getData('settings', {});
-    const sectionsData = getData('sections', {});
-    const sectionBackgroundsData = getData('sectionBackgrounds', {});
-    const servicesData = getData('services', []);
-    const experienceData = getData('experience', []);
-
-    setProfile({
-      name: 'Josiah Johnmark',
-      tagline: 'Creative ideas that drive growth',
-      photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?fit=crop&w=500&h=500&q=80',
-      ...profileData
-    });
-    setProjects(projectsData);
-    setSocials(socialsData);
-    setSettings(settingsData);
-    setSections(sectionsData);
-    setSectionBackgrounds(sectionBackgroundsData);
-    setServices(servicesData);
-    setExperience(experienceData);
-
     // Visitor count
     let count = parseInt(localStorage.getItem('jj_visitors') || '0');
     const visited = sessionStorage.getItem('jj_visited');
@@ -261,14 +332,6 @@ function Portfolio() {
       sessionStorage.setItem('jj_visited', '1');
     }
     setVisitorCount(count);
-
-    // Glow settings
-    if (settingsData.glowColor) {
-      document.documentElement.style.setProperty('--glow-color', settingsData.glowColor);
-    }
-    if (settingsData.glowIntensity !== undefined) {
-      document.documentElement.style.setProperty('--glow-intensity', settingsData.glowIntensity);
-    }
   }, []);
 
   const [adminClicks, setAdminClicks] = useState(0);
@@ -293,21 +356,30 @@ function Portfolio() {
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
-  const sendMessage = (e: React.FormEvent<HTMLFormElement>) => {
+  const sendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsSending(true);
     const form = e.currentTarget;
-    const data = {
-      name: (form.elements[0] as HTMLInputElement).value,
-      email: (form.elements[1] as HTMLInputElement).value,
-      msg: (form.elements[2] as HTMLTextAreaElement).value,
-      date: new Date().toLocaleString()
-    };
-    const msgs = getData('messages', []);
-    msgs.unshift(data);
-    localStorage.setItem('jj_messages', JSON.stringify(msgs));
-    form.reset();
-    setFormSuccess(true);
-    setTimeout(() => setFormSuccess(false), 4000);
+    const name = (form.elements[0] as HTMLInputElement).value;
+    const email = (form.elements[1] as HTMLInputElement).value;
+    const message = (form.elements[2] as HTMLTextAreaElement).value;
+
+    try {
+      await addDoc(collection(db, 'messages'), {
+        name,
+        email,
+        message,
+        date: new Date().toISOString(),
+        read: false
+      });
+      setFormSuccess(true);
+      form.reset();
+      setTimeout(() => setFormSuccess(false), 5000);
+    } catch (error) {
+      console.error("Error sending message:", error);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const handleTilt = (e: React.MouseEvent<HTMLElement>) => {
@@ -322,15 +394,14 @@ function Portfolio() {
     const intensity = Math.min(dist * 1.4, 1);
     const gi = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--glow-intensity')) || 1;
 
-    el.style.transform = `perspective(700px) rotateX(${-dy * max}deg) rotateY(${dx * max}deg) scale3d(1.04, 1.04, 1.04)`;
-    el.style.boxShadow = `${Math.round(dx * 10)}px ${Math.round(dy * 10)}px ${Math.round(14 + intensity * 26)}px rgba(90, 175, 255, ${(0.18 + intensity * 0.5 * gi).toFixed(2)})`;
-    el.style.borderColor = `rgba(90, 175, 255, ${(0.2 + intensity * 0.65).toFixed(2)})`;
+    el.style.transform = `perspective(1000px) rotateX(${-dy * max}deg) rotateY(${dx * max}deg) scale3d(1.02, 1.02, 1.02)`;
+    el.style.boxShadow = `${Math.round(dx * 8)}px ${Math.round(dy * 8)}px ${Math.round(12 + intensity * 20)}px rgba(90, 175, 255, ${(0.15 + intensity * 0.4 * gi).toFixed(2)})`;
+    el.style.borderColor = `rgba(90, 175, 255, ${(0.15 + intensity * 0.5).toFixed(2)})`;
 
     if (spot) {
-      spot.style.left = `${x}px`;
-      spot.style.top = `${y}px`;
-      spot.style.opacity = (0.5 + intensity * 0.5).toFixed(2);
-      const sz = Math.round(120 + intensity * 120);
+      spot.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
+      spot.style.opacity = (0.4 + intensity * 0.6).toFixed(2);
+      const sz = Math.round(100 + intensity * 100);
       spot.style.width = `${sz}px`;
       spot.style.height = `${sz}px`;
     }
@@ -346,6 +417,8 @@ function Portfolio() {
   };
 
   const skills = ['All', ...new Set(projects.map(p => p.skill).filter(Boolean))];
+
+  const [isAboutExpanded, setIsAboutExpanded] = useState(false);
 
   return (
     <>
@@ -425,10 +498,10 @@ function Portfolio() {
                   <span>{typedText}</span>{!isTypingDone && <span className="cursor-blink">|</span>}
                 </div>
                 <div className="hero-roles">
-                  <div className="pill">Pencil Artist</div>
                   <div className="pill">Game Developer</div>
-                  <div className="pill">App Developer</div>
-                  <div className="pill">Web Developer</div>
+                  <div className="pill">AI App Developer</div>
+                  <div className="pill">AI Web Developer</div>
+                  <div className="pill">Pencil Artist</div>
                 </div>
               </div>
             </div>
@@ -613,9 +686,22 @@ function Portfolio() {
               <div className="about-tabs reveal">
                 <div className="about-tab-content">
                   <div
-                    className="hero-about tilt-el"
+                    className={`hero-about tilt-el ${isAboutExpanded ? 'expanded' : 'collapsed'}`}
                     data-max="5"
-                    style={{ maxWidth: '700px', margin: '0 auto', background: 'rgba(10, 20, 40, 0.7)', backdropFilter: 'blur(10px)', border: '1px solid var(--blue-border)' }}
+                    style={{ 
+                      maxWidth: '1001px', 
+                      minHeight: '400px', 
+                      margin: '0 auto', 
+                      background: 'rgba(10, 20, 40, 0.7)', 
+                      backdropFilter: 'blur(10px)', 
+                      border: '1px solid var(--blue-border)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '40px',
+                      position: 'relative'
+                    }}
                     onMouseMove={handleTilt}
                     onMouseLeave={resetTilt}
                   >
@@ -624,6 +710,14 @@ function Portfolio() {
                       className="about-text-compact"
                       dangerouslySetInnerHTML={{ __html: profile.aboutFull || 'Josiah Johnmark is a <strong style="color:var(--blue);">creative person</strong> based in Abuja, Nigeria — a pencil artist and developer people can\'t stop coming back to.<br><br>With over a decade of pencil art experience, he specialises in realistic portraits and character illustrations — work that demands patience, precision, and an obsession with getting every single detail right. That same obsession carries into every line of code he writes.<br><br>His journey into game development was inevitable. Growing up with a deep love for games — the kind that pull you in and refuse to let go — Josiah didn\'t just want to play them. He wanted to build them. The smooth mechanics, the addictive features, the competitive rankings that make you desperate to come back — that\'s the experience he aims to create.<br><br>Holding a degree in Biochemistry, Josiah made a deliberate choice to follow his passion over convention. He respects the science, but his heart has always been in creativity, technology, and growth.<br><br><em style="color:var(--blue);">Talented. Creative. Hardworking.</em> — That\'s how the people around him describe him.' }}
                     ></p>
+                    
+                    <button 
+                      className="about-expand-btn" 
+                      onClick={() => setIsAboutExpanded(!isAboutExpanded)}
+                    >
+                      {isAboutExpanded ? 'Show Less' : 'Read More'}
+                      <span className={`expand-icon ${isAboutExpanded ? 'up' : 'down'}`}></span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -648,34 +742,34 @@ function Portfolio() {
                   </p>
                   <div className="contact-pills">
                     <a href="mailto:josiahjohnmark9@gmail.com" className="contact-pill pill">
-                      <div className="pill-dot"></div> josiahjohnmark9@gmail.com
+                      <Mail size={14} style={{ marginRight: '8px' }} /> josiahjohnmark9@gmail.com
                     </a>
                     <a href="https://wa.me/2347033223491" target="_blank" className="contact-pill pill">
-                      <div className="pill-dot"></div> WhatsApp
+                      <MessageSquare size={14} style={{ marginRight: '8px' }} /> WhatsApp
                     </a>
                     {socials.instagram && (
                       <a href={socials.instagram} target="_blank" className="contact-pill pill">
-                        <div className="pill-dot"></div> Instagram
+                        <Instagram size={14} style={{ marginRight: '8px' }} /> Instagram
                       </a>
                     )}
                     {socials.x && (
                       <a href={socials.x} target="_blank" className="contact-pill pill">
-                        <div className="pill-dot"></div> X (Twitter)
+                        <Twitter size={14} style={{ marginRight: '8px' }} /> X (Twitter)
                       </a>
                     )}
                     {socials.linkedin && (
                       <a href={socials.linkedin} target="_blank" className="contact-pill pill">
-                        <div className="pill-dot"></div> LinkedIn
+                        <Linkedin size={14} style={{ marginRight: '8px' }} /> LinkedIn
                       </a>
                     )}
                     {socials.telegram && (
                       <a href={socials.telegram} target="_blank" className="contact-pill pill">
-                        <div className="pill-dot"></div> Telegram
+                        <Send size={14} style={{ marginRight: '8px' }} /> Telegram
                       </a>
                     )}
                     {socials.github && (
                       <a href={socials.github} target="_blank" className="contact-pill pill">
-                        <div className="pill-dot"></div> GitHub
+                        <Github size={14} style={{ marginRight: '8px' }} /> GitHub
                       </a>
                     )}
                   </div>
@@ -694,7 +788,9 @@ function Portfolio() {
                       <label className="form-label">Message</label>
                       <textarea className="form-textarea" placeholder="Tell me about your project or opportunity..." required></textarea>
                     </div>
-                    <button type="submit" className="btn-primary" style={{ width: '100%', cursor: 'none' }}>Send message</button>
+                    <button type="submit" className="btn-primary" disabled={isSending} style={{ width: '100%', cursor: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                      {isSending ? <Loader2 className="animate-spin" size={20} /> : 'Send message'}
+                    </button>
                     {formSuccess && (
                       <div className="form-success" style={{ display: 'block' }}>Message sent! I'll get back to you soon.</div>
                     )}
@@ -707,8 +803,9 @@ function Portfolio() {
       </main>
 
       <footer>
-        <div className="foot-copy">{settings.footerText || '© 2025 Josiah Johnmark. All rights reserved.'}</div>
-        <div className="foot-tag">Creative ideas that drive growth | <a href="#admin" onClick={handleAdminClick} style={{ color: 'inherit', textDecoration: 'none', opacity: 0.5 }}>Admin</a></div>
+        <FloatingBackgroundIcons count={10} speed={30} />
+        <div className="foot-copy" style={{ position: 'relative', zIndex: 1 }}>{settings.footerText || '© 2025 Josiah Johnmark. All rights reserved.'}</div>
+        <div className="foot-tag" style={{ position: 'relative', zIndex: 1 }}>Creative ideas that drive growth | <a href="#admin" onClick={handleAdminClick} style={{ color: 'inherit', textDecoration: 'none', opacity: 0.5 }}>Admin</a></div>
       </footer>
     </>
   );

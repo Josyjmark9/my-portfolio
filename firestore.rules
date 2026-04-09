@@ -1,0 +1,106 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: projects
+    // Fields: title (string), desc (string), image (string), link (string), skill (string), github (string), date (string)
+    //
+    // Collection: messages
+    // Fields: name (string), email (string), subject (string), message (string), date (string)
+    //
+    // Document: profile/main
+    // Fields: name (string), tagline (string), photo (string), aboutShort (string), aboutFull (string), location (string), cv (string)
+    //
+    // Document: settings/main
+    // Fields: siteName (string), heroGreeting (string)
+    //
+    // Collection: socials
+    // Fields: platform (string), url (string)
+    //
+    // Collection: services
+    // Fields: title (string), desc (string), icon (string)
+    //
+    // Collection: experience
+    // Fields: role (string), company (string), period (string), desc (string)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+             request.auth.token.email == "josiahjohnmark9@gmail.com" && 
+             request.auth.token.email_verified == true;
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidString(val, min, max) {
+      return val is string && val.size() >= min && val.size() <= max;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    // Projects, Profile, Settings, Socials, Services, Experience, Config
+    match /projects/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /profile/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /settings/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /socials/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /services/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /experience/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /config/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Messages
+    match /messages/{id} {
+      allow create: if isValidString(request.resource.data.name, 1, 100) &&
+                      isValidEmail(request.resource.data.email) &&
+                      isValidString(request.resource.data.message, 1, 2000);
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

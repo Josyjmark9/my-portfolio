@@ -1,0 +1,125 @@
+{
+  "entities": {
+    "Project": {
+      "title": "Project",
+      "description": "Portfolio project item",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "desc": { "type": "string" },
+        "image": { "type": "string" },
+        "link": { "type": "string" },
+        "skill": { "type": "string" },
+        "github": { "type": "string" },
+        "date": { "type": "string" }
+      },
+      "required": ["title", "skill"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Contact form message",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "subject": { "type": "string" },
+        "message": { "type": "string" },
+        "date": { "type": "string" }
+      },
+      "required": ["name", "email", "message"]
+    },
+    "Profile": {
+      "title": "Profile",
+      "description": "User profile data",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "tagline": { "type": "string" },
+        "photo": { "type": "string" },
+        "aboutShort": { "type": "string" },
+        "aboutFull": { "type": "string" },
+        "location": { "type": "string" },
+        "cv": { "type": "string" }
+      }
+    },
+    "Setting": {
+      "title": "Setting",
+      "description": "Site settings",
+      "type": "object",
+      "properties": {
+        "siteName": { "type": "string" },
+        "heroGreeting": { "type": "string" }
+      }
+    },
+    "Social": {
+      "title": "Social",
+      "description": "Social media links",
+      "type": "object",
+      "properties": {
+        "platform": { "type": "string" },
+        "url": { "type": "string" }
+      }
+    },
+    "Service": {
+      "title": "Service",
+      "description": "Offered services",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "desc": { "type": "string" },
+        "icon": { "type": "string" }
+      }
+    },
+    "Experience": {
+      "title": "Experience",
+      "description": "Work experience",
+      "type": "object",
+      "properties": {
+        "role": { "type": "string" },
+        "company": { "type": "string" },
+        "period": { "type": "string" },
+        "desc": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "/projects/{projectId}": {
+      "schema": "Project",
+      "description": "Collection of portfolio projects"
+    },
+    "/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Collection of contact messages"
+    },
+    "/profile/main": {
+      "schema": "Profile",
+      "description": "Main profile document"
+    },
+    "/settings/main": {
+      "schema": "Setting",
+      "description": "Main settings document"
+    },
+    "/socials/{socialId}": {
+      "schema": "Social",
+      "description": "Collection of social media links"
+    },
+    "/services/{serviceId}": {
+      "schema": "Service",
+      "description": "Collection of services"
+    },
+    "/experience/{expId}": {
+      "schema": "Experience",
+      "description": "Collection of experience items"
+    },
+    "/config/visibility": {
+      "schema": "object",
+      "description": "Section visibility configuration"
+    },
+    "/config/backgrounds": {
+      "schema": "object",
+      "description": "Section backgrounds configuration"
+    }
+  }
+}
